@@ -1,39 +1,28 @@
-const { exec } = require("child_process");
-const nodemailer = require("nodemailer");
-const dotenv = require("dotenv");
 const axios = require("axios");
+const dotenv = require("dotenv");
 const xml2js = require("xml2js");
 const parser = new xml2js.Parser();
-const qs = require("querystring");
+const nodemailer = require("nodemailer");
+const { exec } = require("child_process");
 dotenv.config();
 
+const CLIENT_IP = process.env.CLIENT_IP;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const SERVER_IP = process.env.SERVER_IP;
-const CURRENT_DOMAIN = JSON.parse(process.env.CURRENT_DOMAIN);
-const DOMAIN_PREFIX = JSON.parse(process.env.DOMAIN_PREFIX);
-const TLD = JSON.parse(process.env.TLD);
-const NAMECHEAP_API_USER = process.env.NAMECHEAP_API_USER;
+const NAMECHEAP_API_URL = process.env.NAMECHEAP_API_URL;
 const NAMECHEAP_API_KEY = process.env.NAMECHEAP_API_KEY;
 const NAMECHEAP_USERNAME = process.env.NAMECHEAP_USERNAME;
-const CLIENT_IP = process.env.CLIENT_IP;
-const CLOUDFLARE_API_KEY = process.env.CLOUDFLARE_API_KEY;
-const CLOUDFLARE_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
-const CPANEL_USER = process.env.CPANEL_USER;
-const CPANEL_PASSWORD = process.env.CPANEL_PASSWORD;
-const CPANEL_API_URL = process.env.CPANEL_API_URL;
-const NAMECHEAP_API_URL = process.env.NAMECHEAP_API_URL;
-
-const API_KEY = "AIzaSyBwgZyIo2WjsrTpaUKwEh_lGVv2iUPc_18";
+const CURRENT_DOMAIN = JSON.parse(process.env.CURRENT_DOMAIN);
+const API_KEY = process.env.SAFE_BROWSING_API_KEY;
 const SAFE_BROWSING_URL = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY}`;
 
 async function fetchDomainList() {
   console.log("[START] Fetching registered domains...");
-  const url = `${NAMECHEAP_API_URL}?ApiUser=${NAMECHEAP_API_USER}&ApiKey=${NAMECHEAP_API_KEY}&UserName=${NAMECHEAP_USERNAME}&ClientIp=${CLIENT_IP}&Command=namecheap.domains.getList`;
-console.log("url",url)
+  const url = `${NAMECHEAP_API_URL}?ApiUser=${NAMECHEAP_USERNAME}&ApiKey=${NAMECHEAP_API_KEY}&UserName=${NAMECHEAP_USERNAME}&ClientIp=${CLIENT_IP}&Command=namecheap.domains.getList`;
   try {
     const response = await axios.get(url);
     const result = await parser.parseStringPromise(response.data);
-    if (result.ApiResponse.Errors) {
+
+    if (result.ApiResponse.Errors && result.ApiResponse.Errors[0].Error) {
       console.log(
         `[!] Error fetching domain list: ${result.ApiResponse.Errors[0].Error[0]._}`
       );
@@ -42,8 +31,9 @@ console.log("url",url)
 
     const domains =
       result.ApiResponse.CommandResponse[0].DomainGetListResult[0].Domain.map(
-        (d) => d.$.Name
+        (domain) => domain.$.Name
       );
+
     console.log(`[+] Registered domains: ${domains.join(", ")}`);
     return domains;
   } catch (error) {
@@ -138,14 +128,19 @@ async function checkDomainStatus() {
 async function setCustomDNS(domain) {
   console.log(`[START] Setting custom DNS for ${domain}`);
   const [SLD, TLD] = domain.split(".");
-  const url = `${NAMECHEAP_API_URL}/xml.response?ApiUser=${NAMECHEAP_API_USER}&ApiKey=${NAMECHEAP_API_KEY}&UserName=${NAMECHEAP_USERNAME}&ClientIp=${CLIENT_IP}&Command=namecheap.domains.dns.setCustom&SLD=${SLD}&TLD=${TLD}&Nameservers=ns1.example.com,ns2.example.com`;
+
+  const nameservers = encodeURIComponent("ns1.example.com,ns2.example.com");
+
+  const url = `${NAMECHEAP_API_URL}/xml.response?ApiUser=${NAMECHEAP_USERNAME}&ApiKey=${NAMECHEAP_API_KEY}&UserName=${NAMECHEAP_USERNAME}&ClientIp=${CLIENT_IP}&Command=namecheap.domains.dns.setCustom&SLD=${SLD}&TLD=${TLD}&Nameservers=${nameservers}`;
 
   try {
     const response = await axios.get(url);
+
     const result = await parser.parseStringPromise(response.data);
-    if (result.ApiResponse.Errors) {
+
+    if (result.ApiResponse.Errors && result.ApiResponse.Errors[0].Error) {
       console.log(
-        `[!] Error setting DNS: ${result.ApiResponse.Errors[0].Error[0]._}`
+        `[!] Error setting DNS for ${domain}: ${result.ApiResponse.Errors[0].Error[0]._}`
       );
       return false;
     }
@@ -153,7 +148,7 @@ async function setCustomDNS(domain) {
     console.log(`[+] Custom DNS set for ${domain}`);
     return true;
   } catch (error) {
-    console.error(`[!] DNS set error: ${error.message}`);
+    console.error(`[!] DNS set error for ${domain}: ${error.message}`);
     return false;
   }
 }
