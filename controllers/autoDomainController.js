@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const xml2js = require("xml2js");
 const parser = new xml2js.Parser();
 const nodemailer = require("nodemailer");
+
 const { exec } = require("child_process");
 dotenv.config();
 
@@ -175,8 +176,11 @@ function restartWebServer() {
 
 function sendEmailNotification(domain) {
   console.log("[START] Sending email notification...");
+ 
+
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    service: "intergratefix.org",
+    port:"465",
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
