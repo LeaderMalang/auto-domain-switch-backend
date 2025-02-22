@@ -11,7 +11,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const NAMECHEAP_API_URL = process.env.NAMECHEAP_API_URL;
 const NAMECHEAP_API_KEY = process.env.NAMECHEAP_API_KEY;
 const NAMECHEAP_USERNAME = process.env.NAMECHEAP_USERNAME;
-const CURRENT_DOMAIN = JSON.parse(process.env.CURRENT_DOMAIN);
+const CURRENT_DOMAIN = JSON.parse(process.env.CURRENT_DOMAIN.replace(/([a-zA-Z0-9.-]+)/g, '"$1"'));
 const API_KEY = process.env.SAFE_BROWSING_API_KEY;
 const SAFE_BROWSING_URL = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY}`;
 
