@@ -11,7 +11,14 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const NAMECHEAP_API_URL = process.env.NAMECHEAP_API_URL;
 const NAMECHEAP_API_KEY = process.env.NAMECHEAP_API_KEY;
 const NAMECHEAP_USERNAME = process.env.NAMECHEAP_USERNAME;
-const CURRENT_DOMAIN = JSON.parse(process.env.CURRENT_DOMAIN.replace(/([a-zA-Z0-9.-]+)/g, '"$1"'));
+let rawDomains = process.env.CURRENT_DOMAIN;
+
+// Fix the string to become valid JSON
+let fixedDomains = rawDomains
+  .replace(/^\[/, '["')       // Replace starting [ with [" 
+  .replace(/\]$/, '"]')       // Replace ending ] with "]
+  .replace(/,/g, '","');   
+const CURRENT_DOMAIN = JSON.parse(fixedDomains);
 const API_KEY = process.env.SAFE_BROWSING_API_KEY;
 const SAFE_BROWSING_URL = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY}`;
 
@@ -129,7 +136,7 @@ async function setCustomDNS(domain) {
   console.log(`[START] Setting custom DNS for ${domain}`);
   const [SLD, TLD] = domain.split(".");
 
-  const nameservers = encodeURIComponent("dns1.namecheaphosting.com","dns2.namecheaphosting.com");
+  const nameservers = encodeURIComponent("dns1.namecheaphosting.com,dns2.namecheaphosting.com");
 
   const url = `${NAMECHEAP_API_URL}/xml.response?ApiUser=${NAMECHEAP_USERNAME}&ApiKey=${NAMECHEAP_API_KEY}&UserName=${NAMECHEAP_USERNAME}&ClientIp=${CLIENT_IP}&Command=namecheap.domains.dns.setCustom&SLD=${SLD}&TLD=${TLD}&Nameservers=${nameservers}`;
 
