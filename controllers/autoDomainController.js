@@ -129,7 +129,7 @@ async function setCustomDNS(domain) {
   console.log(`[START] Setting custom DNS for ${domain}`);
   const [SLD, TLD] = domain.split(".");
 
-  const nameservers = encodeURIComponent("ns1.example.com,ns2.example.com");
+  const nameservers = encodeURIComponent("dns1.namecheaphosting.com","dns2.namecheaphosting.com");
 
   const url = `${NAMECHEAP_API_URL}/xml.response?ApiUser=${NAMECHEAP_USERNAME}&ApiKey=${NAMECHEAP_API_KEY}&UserName=${NAMECHEAP_USERNAME}&ClientIp=${CLIENT_IP}&Command=namecheap.domains.dns.setCustom&SLD=${SLD}&TLD=${TLD}&Nameservers=${nameservers}`;
 
