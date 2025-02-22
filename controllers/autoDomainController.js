@@ -164,7 +164,7 @@ async function setCustomDNS(domain) {
 function restartWebServer() {
   console.log("[START] Restarting web server...");
   const command =
-    process.platform === "win32" ? "iisreset" : "sudo systemctl restart nginx";
+    process.platform === "win32" ? "iisreset" : "systemctl restart nginx";
   exec(command, (error, stdout, stderr) => {
     if (error) {
       console.log(`[!] Web server restart failed: ${stderr}`);
@@ -180,7 +180,8 @@ function sendEmailNotification(domain) {
 
   const transporter = nodemailer.createTransport({
     service: "intergratefix.org",
-    port:"465",
+    port:"587",
+    secure: false, // use SSL or not
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
